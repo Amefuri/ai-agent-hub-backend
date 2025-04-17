@@ -33,9 +33,6 @@ Thumbs.db
 .env
 .env.*
 
-# Module cache (not usually needed in VCS)
-go.sum
-
 # Lineage
 *.pb.go
 

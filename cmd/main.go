@@ -12,13 +12,19 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+func loadEnv() {
+    // Only load .env in development, not in production
+    if os.Getenv("ENV") != "production" {
+        err := godotenv.Load()
+        if err != nil {
+            log.Fatal("Error loading .env file")
+        }
+    }
+}
+
 func main() {
 
-    // Load .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+    loadEnv()
     
     db := database.Connect()
     e := echo.New()
