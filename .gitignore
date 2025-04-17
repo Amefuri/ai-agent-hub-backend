@@ -1,0 +1,46 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build artifacts
+/build
+/bin
+/dist
+*.log
+
+# Dependency directories (if not vendoring)
+vendor/
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# GoLand coverage files
+*.coverprofile
+
+# Env/config files (optional)
+.env
+.env.*
+
+# Module cache (not usually needed in VCS)
+go.sum
+
+# Lineage
+*.pb.go
+
+# Docker
+docker-compose.override.yml
+*.envrc
+.dockerignore
+Dockerfile*
