@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"ai-agent-hub/internal/models"
+	"ai-agent-hub/internal/utils"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -114,25 +114,18 @@ func (h *Handler) Login(c echo.Context) error {
 // GET /api/agents
 func (h *Handler) GetAgents(c echo.Context) error {
 
-	// Parse query parameters
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-
-	offset := (page - 1) * limit
+	p := utils.GetPagination(c)
 
 	var agents []models.Agent
-	if err := h.DB.Limit(limit).Offset(offset).Find(&agents).Error; err != nil {
+	var total int64
+
+	h.DB.Model(&models.Agent{}).Count(&total)
+	if err := h.DB.Limit(p.Limit).Offset(p.Offset).Find(&agents).Error; err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, agents)
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, total)
+	return c.JSON(http.StatusOK, resp)
 }
 
 // GET /api/agents/:id
