@@ -120,11 +120,16 @@ func (h *Handler) GetAgents(c echo.Context) error {
 	var total int64
 
 	h.DB.Model(&models.Agent{}).Count(&total)
-	if err := h.DB.Limit(p.Limit).Offset(p.Offset).Find(&agents).Error; err != nil {
+	if err := h.DB.Limit(p.Limit + 1).Offset(p.Offset).Find(&agents).Error; err != nil {
 		return err
 	}
 
-	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, total)
+	hasMore := len(agents) > p.Limit
+	if hasMore {
+		agents = agents[:p.Limit]
+	}
+
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, hasMore, total)
 	return c.JSON(http.StatusOK, resp)
 }
 
@@ -153,7 +158,12 @@ func (h *Handler) GetAgentsOfUserID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to fetch agents for user")
 	}
 
-	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, total)
+	hasMore := len(agents) > p.Limit
+	if hasMore {
+		agents = agents[:p.Limit]
+	}
+
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, hasMore, total)
 	return c.JSON(http.StatusOK, resp)
 }
 
@@ -175,7 +185,12 @@ func (h *Handler) GetMyAgents(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to fetch your agents")
 	}
 
-	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, total)
+	hasMore := len(agents) > p.Limit
+	if hasMore {
+		agents = agents[:p.Limit]
+	}
+
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, hasMore, total)
 	return c.JSON(http.StatusOK, resp)
 }
 
