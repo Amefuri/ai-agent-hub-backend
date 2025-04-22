@@ -142,30 +142,41 @@ func (h *Handler) GetAgentsByID(c echo.Context) error {
 
 // GET /api/user/:user_id/agents
 func (h *Handler) GetAgentsOfUserID(c echo.Context) error {
+	p := utils.GetPagination(c)
 	userID := c.Param("user_id")
 
 	var agents []models.Agent
+	var total int64
+
+	h.DB.Model(&models.Agent{}).Count(&total)
 	if err := h.DB.Where("user_id = ?", userID).Find(&agents).Error; err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to fetch agents for user")
 	}
 
-	return c.JSON(http.StatusOK, agents)
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, total)
+	return c.JSON(http.StatusOK, resp)
 }
 
 //===============================================================================================================
 
 // GET /api/my/agents
 func (h *Handler) GetMyAgents(c echo.Context) error {
+	p := utils.GetPagination(c)
+
 	user := c.Get("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	userID := claims["user_id"].(string)
 
 	var agents []models.Agent
+	var total int64
+
+	h.DB.Model(&models.Agent{}).Count(&total)
 	if err := h.DB.Where("user_id = ?", userID).Find(&agents).Error; err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to fetch your agents")
 	}
 
-	return c.JSON(http.StatusOK, agents)
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, total)
+	return c.JSON(http.StatusOK, resp)
 }
 
 // GET /api/my/agents/:id
