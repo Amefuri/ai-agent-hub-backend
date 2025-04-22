@@ -4,6 +4,7 @@ import (
 	"ai-agent-hub/internal/models"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,11 +25,11 @@ func NewHandler(db *gorm.DB) *Handler {
 
 // POST /api/auth/register
 func (h *Handler) Register(c echo.Context) error {
-    type RegisterRequest struct {
-        Username string `json:"username" validate:"required,min=3,max=32"`
-        Email    string `json:"email" validate:"required,email"`
-        Password string `json:"password" validate:"required,min=6"`
-    }
+	type RegisterRequest struct {
+		Username string `json:"username" validate:"required,min=3,max=32"`
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=6"`
+	}
 
 	var req RegisterRequest
 
@@ -112,8 +113,22 @@ func (h *Handler) Login(c echo.Context) error {
 
 // GET /api/agents
 func (h *Handler) GetAgents(c echo.Context) error {
+
+	// Parse query parameters
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
 	var agents []models.Agent
-	if err := h.DB.Find(&agents).Error; err != nil {
+	if err := h.DB.Limit(limit).Offset(offset).Find(&agents).Error; err != nil {
 		return err
 	}
 
@@ -180,20 +195,20 @@ func (h *Handler) GetMyAgentByID(c echo.Context) error {
 
 // POST /api/my/agents
 func (h *Handler) CreateMyAgents(c echo.Context) error {
-    user := c.Get("user")
-    if user == nil {
-        return echo.NewHTTPError(http.StatusUnauthorized, "Missing JWT token")
-    }
+	user := c.Get("user")
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Missing JWT token")
+	}
 
-    token, ok := user.(*jwt.Token)
-    if !ok {
-        return echo.NewHTTPError(http.StatusUnauthorized, "Invalid JWT token")
-    }
+	token, ok := user.(*jwt.Token)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid JWT token")
+	}
 
-    claims, ok := token.Claims.(jwt.MapClaims)
-    if !ok || !token.Valid {
-        return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
-    }
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
+	}
 
 	// user := c.Get("user").(*jwt.Token)
 	// claims := user.Claims.(jwt.MapClaims)
@@ -205,13 +220,13 @@ func (h *Handler) CreateMyAgents(c echo.Context) error {
 	}
 
 	agent := models.Agent{
-		Name:           input.Name,
-		Description:    input.Description,
-		Avatar:         input.Avatar,
-		SystemPrompt:   input.SystemPrompt,
-		InputTemplate:  input.InputTemplate,
-		Personality:    input.Personality,
-		UserID:         userID,
+		Name:          input.Name,
+		Description:   input.Description,
+		Avatar:        input.Avatar,
+		SystemPrompt:  input.SystemPrompt,
+		InputTemplate: input.InputTemplate,
+		Personality:   input.Personality,
+		UserID:        userID,
 	}
 
 	if err := h.DB.Create(&agent).Error; err != nil {
@@ -299,7 +314,7 @@ func (h *Handler) DeleteMyAgent(c echo.Context) error {
 // 	if err := h.DB.First(&user, userID).Error; err != nil {
 // 		return echo.ErrUnauthorized
 // 	}
-// 	user.Password = "" // don’t return hashed password
+// 	user.Password = "" // don't return hashed password
 // 	return c.JSON(http.StatusOK, user)
 // }
 
