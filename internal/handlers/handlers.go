@@ -167,8 +167,49 @@ func (h *Handler) GetAgentsOfUserID(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
-//===============================================================================================================
+// GET /api/agents/featured
+func (h *Handler) GetFeaturedAgents(c echo.Context) error {
+	p := utils.GetPagination(c)
 
+	var agents []models.Agent
+	var total int64
+
+	h.DB.Model(&models.Agent{}).Count(&total)
+	if err := h.DB.Where("is_featured = ?", true).Limit(p.Limit + 1).Offset(p.Offset).Find(&agents).Error; err != nil {
+		return err
+	}
+
+	hasMore := len(agents) > p.Limit
+	if hasMore {
+		agents = agents[:p.Limit]
+	}
+
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, hasMore, total)
+	return c.JSON(http.StatusOK, resp)
+}
+
+// GET /api/agents/popular
+func (h *Handler) GetPopularAgents(c echo.Context) error {
+	p := utils.GetPagination(c)
+
+	var agents []models.Agent
+	var total int64
+
+	h.DB.Model(&models.Agent{}).Count(&total)
+	if err := h.DB.Order("view_count desc").Limit(p.Limit + 1).Offset(p.Offset).Find(&agents).Error; err != nil {
+		return err
+	}
+
+	hasMore := len(agents) > p.Limit
+	if hasMore {
+		agents = agents[:p.Limit]
+	}
+
+	resp := utils.NewPaginatedResponse(agents, p.Page, p.Limit, hasMore, total)
+	return c.JSON(http.StatusOK, resp)
+}
+
+// ===============================================================================================================
 // GET /api/my/agents
 func (h *Handler) GetMyAgents(c echo.Context) error {
 	p := utils.GetPagination(c)
